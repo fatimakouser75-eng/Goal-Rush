@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Goal Rush 2026 — Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#050607;
+    --panel:#0d1013;
+    --blue:#00BFFF;
+    --blue-dim:#0077A6;
+    --grass:#1E8449;
+    --grass-dark:#166638;
+    --gold:#FFD700;
+    --line:#EDEDED;
+    --grey:#7c8790;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--black);overflow:hidden;font-family:'Inter',sans-serif;}
+  #app{position:relative;width:100vw;height:100vh;background:var(--black);}
+  .screen{position:absolute;inset:0;display:none;}
+  .screen.active{display:block;}
+
+  /* ---------- floodlight signature motif ---------- */
+  .floodlights{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+  .beam{position:absolute;top:-10%;width:140%;height:220%;left:50%;
+    background:linear-gradient(180deg, rgba(0,191,255,0.16), rgba(0,191,255,0) 55%);
+    transform-origin:top center;
+    animation:sweep 9s ease-in-out infinite;
+    mix-blend-mode:screen;
+  }
+  .beam.b2{animation-duration:11s; animation-delay:-3s; background:linear-gradient(180deg, rgba(0,191,255,0.10), rgba(0,191,255,0) 55%);}
+  .beam.b3{animation-duration:7.5s; animation-delay:-6s; background:linear-gradient(180deg, rgba(0,191,255,0.08), rgba(0,191,255,0) 55%);}
+  @keyframes sweep{
+    0%{transform:translateX(-50%) rotate(-22deg);}
+    50%{transform:translateX(-50%) rotate(22deg);}
+    100%{transform:translateX(-50%) rotate(-22deg);}
+  }
+
+  /* ---------- MENU ---------- */
+  #menu{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;position:relative;}
+  .eyebrow{
+    font-family:'Oswald',sans-serif; font-weight:500; letter-spacing:0.35em; font-size:11px;
+    color:var(--blue); text-transform:uppercase; opacity:0.85; margin-bottom:10px;
+  }
+  .title{
+    font-family:'Oswald',sans-serif; font-weight:700; font-size:clamp(40px,9vw,84px);
+    color:#fff; letter-spacing:0.01em; text-align:center; line-height:0.95; margin:0;
+    text-shadow:0 0 30px rgba(0,191,255,0.35);
+  }
+  .title span{color:var(--blue);}
+  .subtitle{color:var(--grey); font-size:14px; margin:14px 0 40px; letter-spacing:0.02em;}
+  .menu-buttons{display:flex;flex-direction:column;gap:12px;width:min(320px,80vw);position:relative;z-index:2;}
+  .menu-btn{
+    font-family:'Oswald',sans-serif; font-weight:600; font-size:15px; letter-spacing:0.06em;
+    text-transform:uppercase; color:#fff; background:rgba(255,255,255,0.03);
+    border:1px solid rgba(0,191,255,0.35); border-radius:2px; padding:15px 20px;
+    cursor:pointer; text-align:left; position:relative; overflow:hidden; transition:all .18s ease;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .menu-btn:hover{background:rgba(0,191,255,0.12); border-color:var(--blue); transform:translateX(4px);}
+  .menu-btn .arrow{color:var(--blue); font-size:14px;}
+  .menu-btn.primary{background:var(--blue); color:var(--black); border-color:var(--blue);}
+  .menu-btn.primary:hover{background:#33cfff;}
+  .menu-btn.primary .arrow{color:var(--black);}
+  .badge{
+    position:absolute; top:20px; right:20px; font-family:'Oswald',sans-serif; font-size:10px;
+    letter-spacing:0.15em; color:var(--grey); text-transform:uppercase; border:1px solid #262b2f;
+    padding:6px 10px; border-radius:2px;
+  }
+
+  /* ---------- SHARED TOP BAR ---------- */
+  .topbar{position:absolute; top:0; left:0; right:0; height:52px; display:flex; align-items:center;
+    padding:0 16px; z-index:10; background:linear-gradient(180deg, rgba(0,0,0,0.65), transparent);}
+  .back-btn{
+    font-family:'Oswald',sans-serif; font-size:12px; letter-spacing:0.08em; color:#fff;
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:2px;
+    padding:8px 14px; cursor:pointer; text-transform:uppercase;
+  }
+  .back-btn:hover{background:rgba(255,255,255,0.16);}
+
+  /* ---------- PENALTY SCREEN ---------- */
+  #penalty-canvas-wrap{position:absolute; inset:0;}
+  canvas{display:block; width:100%; height:100%; touch-action:none;}
+  .scoreboard{
+    position:absolute; top:52px; left:50%; transform:translateX(-50%); z-index:5;
+    display:flex; align-items:center; gap:10px; background:rgba(5,6,7,0.75);
+    border:1px solid rgba(0,191,255,0.3); border-radius:2px; padding:8px 18px;
+    font-family:'Oswald',sans-serif;
+  }
+  .sb-team{font-size:12px; letter-spacing:0.1em; color:var(--grey);}
+  .sb-score{font-size:22px; font-weight:700; color:#fff;}
+  .sb-divider{width:1px; height:18px; background:#262b2f;}
+  .sb-round{font-size:11px; color:var(--blue); letter-spacing:0.12em; text-transform:uppercase;}
+  .prompt{
+    position:absolute; bottom:28px; left:50%; transform:translateX(-50%); z-index:5;
+    font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--gold); text-align:center;
+  }
+  .result-text{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:6;
+    font-family:'Oswald',sans-serif; font-weight:700; font-size:56px; letter-spacing:0.02em;
+    opacity:0; pointer-events:none; text-shadow:0 0 24px currentColor;
+  }
+  .overlay{
+    position:absolute; inset:0; background:rgba(5,6,7,0.88); z-index:8; display:none;
+    flex-direction:column; align-items:center; justify-content:center; text-align:center;
+  }
+  .overlay.show{display:flex;}
+  .overlay .outcome{font-family:'Oswald',sans-serif; font-weight:700; font-size:clamp(28px,6vw,44px); margin-bottom:22px;}
+  .overlay .again-btn{
+    font-family:'Oswald',sans-serif; font-weight:600; font-size:13px; letter-spacing:0.08em;
+    text-transform:uppercase; color:var(--black); background:var(--blue); border:none; border-radius:2px;
+    padding:12px 26px; cursor:pointer;
+  }
+
+  /* ---------- QUICK MATCH PREVIEW ---------- */
+  #qm-canvas-wrap{position:absolute; inset:0;}
+  .preview-tag{
+    position:absolute; top:52px; right:16px; z-index:5; font-family:'Oswald',sans-serif; font-size:10px;
+    letter-spacing:0.14em; color:var(--black); background:var(--gold); padding:5px 10px; border-radius:2px;
+    text-transform:uppercase;
+  }
+  .qm-hud{
+    position:absolute; top:52px; left:50%; transform:translateX(-50%); z-index:5;
+    background:rgba(5,6,7,0.75); border:1px solid rgba(0,191,255,0.3); border-radius:2px;
+    padding:8px 18px; font-family:'Oswald',sans-serif; display:flex; align-items:center; gap:10px;
+  }
+  .joystick-base{
+    position:absolute; bottom:28px; left:28px; width:100px; height:100px; border-radius:50%;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); z-index:5;
+  }
+  .joystick-knob{
+    position:absolute; width:44px; height:44px; border-radius:50%; background:var(--blue);
+    top:28px; left:28px; box-shadow:0 0 16px rgba(0,191,255,0.6);
+  }
+  .qm-buttons{position:absolute; bottom:28px; right:24px; display:flex; gap:10px; z-index:5;}
+  .qm-btn{
+    width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:'Oswald',sans-serif; font-size:10px; letter-spacing:0.05em; color:#fff;
+    background:rgba(13,16,19,0.85); border:1px solid rgba(255,255,255,0.15); text-transform:uppercase;
+  }
+  .qm-btn.shoot{border-color:var(--gold); color:var(--gold);}
+  .qm-btn.pass{border-color:var(--blue); color:var(--blue);}
+  .qm-note{
+    position:absolute; bottom:150px; left:50%; transform:translateX(-50%); z-index:5;
+    font-size:12px; color:var(--grey); text-align:center; max-width:280px; line-height:1.5;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ MENU SCREEN ============ -->
+  <div class="screen active" id="menu">
+    <div class="floodlights"><div class="beam"></div><div class="beam b2"></div><div class="beam b3"></div></div>
+    <div class="badge">Web Preview</div>
+    <div class="eyebrow">Kickoff · Stadium Series</div>
+    <h1 class="title">GOAL RUSH<br><span>2026</span></h1>
+    <p class="subtitle">Black &amp; electric-blue stadium theme — mobile-fast football</p>
+    <div class="menu-buttons">
+      <div class="menu-btn primary" onclick="showScreen('penalty')">Penalty Shootout <span class="arrow">PLAY →</span></div>
+      <div class="menu-btn" onclick="showScreen('quickmatch')">Quick Match <span class="arrow">PREVIEW →</span></div>
+      <div class="menu-btn" onclick="toast('Full roster of 10 teams lives in the app build.')">Teams &amp; Stadiums <span class="arrow">→</span></div>
+      <div class="menu-btn" onclick="toast('Easy / Medium / Hard tuning lives in Difficulty.kt.')">Settings <span class="arrow">→</span></div>
+    </div>
+  </div>
+
+  <!-- ============ PENALTY SHOOTOUT SCREEN ============ -->
+  <div class="screen" id="penalty">
+    <div class="topbar"><button class="back-btn" onclick="showScreen('menu')">← Menu</button></div>
+    <div class="scoreboard">
+      <span class="sb-team">YOU</span><span class="sb-score" id="p-score">0</span>
+      <div class="sb-divider"></div>
+      <span class="sb-score" id="c-score">0</span><span class="sb-team">CPU</span>
+      <div class="sb-divider"></div>
+      <span class="sb-round" id="p-round">ROUND 1/5</span>
+    </div>
+    <div id="penalty-canvas-wrap"><canvas id="pcanvas"></canvas></div>
+    <div class="result-text" id="result-text"></div>
+    <div class="prompt" id="p-prompt">Drag from the ball to aim &amp; shoot</div>
+    <div class="overlay" id="p-overlay">
+      <div class="outcome" id="p-outcome"></div>
+      <button class="again-btn" onclick="resetPenalty()">Shoot Again</button>
+    </div>
+  </div>
+
+  <!-- ============ QUICK MATCH PREVIEW SCREEN ============ -->
+  <div class="screen" id="quickmatch">
+    <div class="topbar"><button class="back-btn" onclick="showScreen('menu')">← Menu</button></div>
+    <div class="preview-tag">Style Preview</div>
+    <div class="qm-hud">
+      <span class="sb-team" style="color:var(--blue)">HOME</span>
+      <span class="sb-score">1 - 0</span>
+      <span class="sb-team" style="color:#e5534b">AWAY</span>
+      <div class="sb-divider"></div>
+      <span class="sb-round">H1 · 03:42</span>
+    </div>
+    <div id="qm-canvas-wrap"><canvas id="qmcanvas"></canvas></div>
+    <div class="qm-note">Full 60fps joystick movement, AI teammates &amp; opponents run live in the Kotlin build — this is a static layout preview.</div>
+    <div class="joystick-base"><div class="joystick-knob" id="knob"></div></div>
+    <div class="qm-buttons">
+      <div class="qm-btn">Tackle</div>
+      <div class="qm-btn pass">Pass</div>
+      <div class="qm-btn shoot">Shoot</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ---------------- screen management ---------------- */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='penalty') initPenalty();
+  if(id==='quickmatch') initQuickMatch();
+}
+function toast(msg){
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#0d1013;color:#fff;border:1px solid #00BFFF;padding:12px 20px;border-radius:2px;font-family:Inter,sans-serif;font-size:13px;z-index:999;max-width:80vw;text-align:center;';
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2600);
+}
+
+/* ================= PENALTY SHOOTOUT (fully playable) ================= */
+const pcanvas = document.getElementById('pcanvas');
+const pctx = pcanvas.getContext('2d');
+let pW, pH;
+function resizeP(){
+  pW = pcanvas.width = pcanvas.clientWidth * devicePixelRatio;
+  pH = pcanvas.height = pcanvas.clientHeight * devicePixelRatio;
+}
+window.addEventListener('resize', ()=>{ if(document.getElementById('penalty').classList.contains('active')) resizeP(); });
+
+let pState;
+function resetPenalty(){
+  pState = {
+    playerScore:0, cpuScore:0, round:1, totalRounds:5, isPlayerTurn:true, suddenDeath:false,
+    matchOver:false, ballX:0.5, ballY:0.86, animating:false, shakeT:0, keeperX:0.5
+  };
+  document.getElementById('p-overlay').classList.remove('show');
+  document.getElementById('p-prompt').style.display = 'block';
+  updateScoreboard();
+}
+function updateScoreboard(){
+  document.getElementById('p-score').textContent = pState.playerScore;
+  document.getElementById('c-score').textContent = pState.cpuScore;
+  document.getElementById('p-round').textContent = pState.suddenDeath ? 'SUDDEN DEATH' : `ROUND ${Math.min(pState.round,pState.totalRounds)}/${pState.totalRounds}`;
+}
+function initPenalty(){
+  resizeP();
+  resetPenalty();
+  requestAnimationFrame(drawPenaltyLoop);
+}
+
+let dragStart=null, dragCurrent=null;
+function pPos(e){
+  const rect = pcanvas.getBoundingClientRect();
+  const cx = (e.touches? e.touches[0].clientX : e.clientX) - rect.left;
+  const cy = (e.touches? e.touches[0].clientY : e.clientY) - rect.top;
+  return {x: cx/rect.width, y: cy/rect.height};
+}
+pcanvas.addEventListener('mousedown', e=>{ if(pState.animating||pState.matchOver||!pState.isPlayerTurn) return; dragStart=pPos(e); dragCurrent=dragStart; });
+pcanvas.addEventListener('mousemove', e=>{ if(dragStart) dragCurrent=pPos(e); });
+window.addEventListener('mouseup', e=>{ if(dragStart){ resolveShot(dragStart,dragCurrent||dragStart); dragStart=null; } });
+pcanvas.addEventListener('touchstart', e=>{ if(pState.animating||pState.matchOver||!pState.isPlayerTurn) return; dragStart=pPos(e); dragCurrent=dragStart; }, {passive:true});
+pcanvas.addEventListener('touchmove', e=>{ if(dragStart) dragCurrent=pPos(e); }, {passive:true});
+window.addEventListener('touchend', e=>{ if(dragStart){ resolveShot(dragStart,dragCurrent||dragStart); dragStart=null; } });
+
+function resolveShot(start, end){
+  const dx = end.x - start.x, dy = end.y - start.y;
+  const power = Math.min(1, Math.sqrt(dx*dx+dy*dy) * 2.4);
+  const aimX = Math.max(-1, Math.min(1, dx*2.6));
+  const aimY = Math.max(0, Math.min(1, -dy*2.0));
+  if(power < 0.1){ showResult('MISSED!', '#e5534b'); return; }
+
+  const keeperReads = Math.random() < 0.45;
+  const corner = Math.abs(aimX);
+  const saveChance = keeperReads ? (0.75 - corner*0.5) : 0.05;
+  const scored = Math.random() >= saveChance;
+
+  pState.animating = true;
+  document.getElementById('p-prompt').style.display = 'none';
+  animateBall(0.5 + aimX*0.4, 0.18 + (1-aimY)*0.3, ()=>{
+    if(scored){ pState.playerScore++; pState.shakeT=18; playGoalFx(); showResult('GOAL!', '#FFD700'); }
+    else { showResult('SAVED!', '#e5534b'); }
+    updateScoreboard();
+    setTimeout(()=>{
+      pState.ballX=0.5; pState.ballY=0.86; pState.isPlayerTurn=false; pState.animating=false;
+      advanceOrCpu();
+    }, 850);
+  });
+}
+
+function advanceOrCpu(){
+  if(pState.matchOver) return;
+  setTimeout(()=>{
+    // CPU shot
+    const aimX = (Math.random()*2-1)*0.8;
+    const aimY = 0.3+Math.random()*0.6;
+    const scored = Math.random() < 0.55;
+    pState.animating = true;
+    animateBall(0.5+aimX*0.4, 0.18+(1-aimY)*0.3, ()=>{
+      if(scored){ pState.cpuScore++; showResult('GOAL!', '#FFD700'); }
+      else { showResult('SAVED!', '#00BFFF'); }
+      updateScoreboard();
+      setTimeout(()=>{
+        pState.ballX=0.5; pState.ballY=0.86; pState.animating=false;
+        pState.round++;
+        pState.isPlayerTurn = true;
+        checkMatchOver();
+        if(!pState.matchOver){
+          document.getElementById('p-prompt').style.display='block';
+          updateScoreboard();
+        }
+      }, 850);
+    });
+  }, 500);
+}
+
+function checkMatchOver(){
+  const regulationDone = pState.round > pState.totalRounds;
+  if(regulationDone && pState.playerScore !== pState.cpuScore){
+    endMatch(pState.playerScore > pState.cpuScore);
+  } else if(regulationDone && pState.playerScore === pState.cpuScore){
+    pState.suddenDeath = true;
+  } else if(pState.suddenDeath && pState.playerScore !== pState.cpuScore){
+    endMatch(pState.playerScore > pState.cpuScore);
+  }
+}
+function endMatch(won){
+  pState.matchOver = true;
+  document.getElementById('p-outcome').textContent = won ? 'YOU WIN THE SHOOTOUT!' : 'OPPONENT WINS';
+  document.getElementById('p-outcome').style.color = won ? '#FFD700' : '#e5534b';
+  document.getElementById('p-overlay').classList.add('show');
+}
+
+function animateBall(tx,ty,done){
+  const sx=0.5, sy=0.86;
+  const start = performance.now();
+  const dur = 420;
+  function step(now){
+    const t = Math.min(1,(now-start)/dur);
+    pState.ballX = sx + (tx-sx)*t;
+    pState.ballY = sy + (ty-sy)*t;
+    if(t<1) requestAnimationFrame(step); else done();
+  }
+  requestAnimationFrame(step);
+}
+function showResult(text,color){
+  const el = document.getElementById('result-text');
+  el.textContent = text; el.style.color = color; el.style.opacity = 1;
+  el.style.transform = 'translate(-50%,-50%) scale(1)';
+  setTimeout(()=>{ el.style.opacity = 0; }, 750);
+}
+function playGoalFx(){ /* camera shake handled via pState.shakeT in draw loop */ }
+
+function drawPenaltyLoop(){
+  if(!document.getElementById('penalty').classList.contains('active')) return;
+  const w=pW, h=pH;
+  let shakeX=0, shakeY=0;
+  if(pState.shakeT>0){ shakeX=(Math.random()-0.5)*pState.shakeT; shakeY=(Math.random()-0.5)*pState.shakeT; pState.shakeT*=0.85; if(pState.shakeT<0.5) pState.shakeT=0; }
+
+  pctx.clearRect(0,0,w,h);
+  // sky/stand
+  pctx.fillStyle = '#050607';
+  pctx.fillRect(0,0,w,h*0.34);
+  // pitch
+  const grad = pctx.createLinearGradient(0,h*0.34,0,h);
+  grad.addColorStop(0,'#1E8449'); grad.addColorStop(1,'#123b21');
+  pctx.fillStyle = grad;
+  pctx.fillRect(0,h*0.34,w,h*0.66);
+
+  // floodlight glow dots
+  for(let i=0;i<=6;i++){
+    const x = w*(i/6);
+    pctx.beginPath();
+    pctx.arc(x+shakeX, 24*devicePixelRatio+shakeY, 26*devicePixelRatio, 0, Math.PI*2);
+    pctx.fillStyle = 'rgba(0,191,255,0.28)';
+    pctx.fill();
+  }
+
+  // goal
+  const gl = w*0.16+shakeX, gr = w*0.84+shakeX, gt = h*0.13+shakeY, gb = h*0.42+shakeY;
+  pctx.strokeStyle = '#EDEDED'; pctx.lineWidth = 5*devicePixelRatio;
+  pctx.strokeRect(gl,gt,gr-gl,gb-gt);
+  pctx.strokeStyle = 'rgba(237,237,237,0.3)'; pctx.lineWidth = 1*devicePixelRatio;
+  for(let i=0;i<=10;i++){ const x=gl+(gr-gl)*(i/10); pctx.beginPath(); pctx.moveTo(x,gt); pctx.lineTo(x,gb); pctx.stroke(); }
+  for(let i=0;i<=5;i++){ const y=gt+(gb-gt)*(i/5); pctx.beginPath(); pctx.moveTo(gl,y); pctx.lineTo(gr,y); pctx.stroke(); }
+
+  // keeper
+  pctx.beginPath();
+  pctx.arc(w*0.5+shakeX, gb-30*devicePixelRatio+shakeY, 20*devicePixelRatio, 0, Math.PI*2);
+  pctx.fillStyle = '#e5534b'; pctx.fill();
+
+  // aim line while dragging
+  if(dragStart && dragCurrent){
+    pctx.beginPath();
+    pctx.moveTo(dragStart.x*w, dragStart.y*h);
+    pctx.lineTo(dragCurrent.x*w, dragCurrent.y*h);
+    pctx.strokeStyle = '#FFD700'; pctx.lineWidth = 3*devicePixelRatio; pctx.setLineDash([8,6]);
+    pctx.stroke(); pctx.setLineDash([]);
+  }
+
+  // ball
+  const bx = pState.ballX*w+shakeX, by = pState.ballY*h+shakeY;
+  pctx.beginPath(); pctx.arc(bx,by,11*devicePixelRatio,0,Math.PI*2);
+  pctx.fillStyle = '#fff'; pctx.fill();
+  pctx.lineWidth = 2*devicePixelRatio; pctx.strokeStyle='#111'; pctx.stroke();
+
+  requestAnimationFrame(drawPenaltyLoop);
+}
+
+/* ================= QUICK MATCH (styled preview) ================= */
+const qmcanvas = document.getElementById('qmcanvas');
+const qctx = qmcanvas.getContext('2d');
+let qW,qH, qmT=0, qmRunning=false;
+function resizeQ(){
+  qW = qmcanvas.width = qmcanvas.clientWidth*devicePixelRatio;
+  qH = qmcanvas.height = qmcanvas.clientHeight*devicePixelRatio;
+}
+window.addEventListener('resize', ()=>{ if(document.getElementById('quickmatch').classList.contains('active')) resizeQ(); });
+
+function initQuickMatch(){
+  resizeQ();
+  if(!qmRunning){ qmRunning=true; requestAnimationFrame(drawQM); }
+  animateKnob();
+}
+function drawQM(now){
+  if(!document.getElementById('quickmatch').classList.contains('active')){ qmRunning=false; return; }
+  qmT += 0.012;
+  const w=qW,h=qH;
+  qctx.clearRect(0,0,w,h);
+  qctx.fillStyle = '#2B2B2B'; qctx.fillRect(0,0,w,h*0.05); qctx.fillRect(0,h*0.95,w,h*0.05);
+  const stripes=12;
+  for(let i=0;i<stripes;i++){
+    qctx.fillStyle = i%2===0 ? '#1E8449' : '#166638';
+    qctx.fillRect(w*i/stripes, h*0.05, w/stripes, h*0.90);
+  }
+  qctx.strokeStyle='rgba(237,237,237,0.55)'; qctx.lineWidth=2*devicePixelRatio;
+  qctx.beginPath(); qctx.moveTo(w/2,h*0.05); qctx.lineTo(w/2,h*0.95); qctx.stroke();
+  qctx.beginPath(); qctx.arc(w/2,h/2,h*0.13,0,Math.PI*2); qctx.stroke();
+  qctx.fillStyle='#EDEDED';
+  qctx.fillRect(0, h*0.42, 5*devicePixelRatio, h*0.16);
+  qctx.fillRect(w-5*devicePixelRatio, h*0.42, 5*devicePixelRatio, h*0.16);
+
+  // players (gentle idle bob so it doesn't look static)
+  const bob = Math.sin(qmT*2)*4*devicePixelRatio;
+  drawDot(w*0.12,h*0.5,'#EDEDED',16); // home GK
+  drawDot(w*0.35,h*0.38+bob,'#00BFFF',14,true); // user controlled
+  drawDot(w*0.35,h*0.62-bob,'#00BFFF',14);
+  drawDot(w*0.88,h*0.5,'#EDEDED',16); // away GK
+  drawDot(w*0.65,h*0.38-bob,'#e5534b',14);
+  drawDot(w*0.65,h*0.62+bob,'#e5534b',14);
+
+  // ball drifting near the controlled player
+  const bx = w*0.38 + Math.sin(qmT*3)*6*devicePixelRatio;
+  const by = h*0.38+bob + Math.cos(qmT*3)*6*devicePixelRatio;
+  qctx.beginPath(); qctx.arc(bx,by,6*devicePixelRatio,0,Math.PI*2);
+  qctx.fillStyle='#fff'; qctx.fill(); qctx.lineWidth=1.5*devicePixelRatio; qctx.strokeStyle='#111'; qctx.stroke();
+
+  requestAnimationFrame(drawQM);
+}
+function drawDot(x,y,color,r,ring){
+  qctx.beginPath(); qctx.arc(x+2,y+3,r*devicePixelRatio,0,Math.PI*2);
+  qctx.fillStyle='rgba(0,0,0,0.35)'; qctx.fill();
+  qctx.beginPath(); qctx.arc(x,y,r*devicePixelRatio,0,Math.PI*2);
+  qctx.fillStyle=color; qctx.fill();
+  if(ring){ qctx.lineWidth=3*devicePixelRatio; qctx.strokeStyle='#00BFFF'; qctx.beginPath(); qctx.arc(x,y,(r+5)*devicePixelRatio,0,Math.PI*2); qctx.stroke(); }
+}
+function animateKnob(){
+  const knob = document.getElementById('knob');
+  let t=0;
+  function step(){
+    if(!document.getElementById('quickmatch').classList.contains('active')) return;
+    t += 0.03;
+    knob.style.transform = `translate(${Math.sin(t)*18}px, ${Math.cos(t*0.7)*10}px)`;
+    requestAnimationFrame(step);
+  }
+  step();
+}
+</script>
+</body>
+</html>
